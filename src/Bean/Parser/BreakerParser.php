@@ -2,6 +2,7 @@
 
 namespace Swoft\Sg\Bean\Parser;
 
+use Swoft\Bean\Parser\AbstractParser;
 use Swoft\Sg\Bean\Annotation\Breaker;
 use Swoft\Bean\Annotation\Scope;
 use Swoft\Sg\Bean\Collector\BreakerCollector;

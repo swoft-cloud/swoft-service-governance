@@ -2,10 +2,10 @@
 
 namespace Swoft\Sg\Bean\Wrapper;
 
-use Swoft\Bean\Annotation\Breaker;
 use Swoft\Bean\Annotation\Inject;
 use Swoft\Bean\Annotation\Value;
 use Swoft\Bean\Wrapper\AbstractWrapper;
+use Swoft\Sg\Bean\Annotation\Breaker;
 
 /**
  * the wrapper of breaker
