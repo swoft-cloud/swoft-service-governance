@@ -23,6 +23,25 @@ if (!function_exists('breaker')) {
     }
 }
 
+if (!function_exists('fallback')) {
+    /**
+     * @param string $name
+     *
+     * @return object
+     */
+    function fallback(string $name)
+    {
+        $collector = \Swoft\Sg\Bean\Collector\FallbackCollector::getCollector();
+        if (!isset($collector[$name])) {
+            return null;
+        }
+
+        $beanName = $collector[$name];
+
+        return App::getBean($beanName);
+    }
+}
+
 if (!function_exists('balancer')) {
     /**
      * @return \Swoft\Sg\BalancerSelector

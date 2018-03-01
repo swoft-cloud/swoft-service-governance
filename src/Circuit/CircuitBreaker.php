@@ -187,10 +187,11 @@ class CircuitBreaker
      * 降级处理
      *
      * @param mixed $fallback
+     * @param array $params
      *
      * @return null
      */
-    public function fallback($fallback = null)
+    public function fallback($fallback = null, array $params = [])
     {
         if ($fallback == null) {
             App::debug($this->serviceName . "服务，当前[" . $this->getCurrentState() . "]，服务降级处理，fallback未定义");
@@ -200,7 +201,8 @@ class CircuitBreaker
         if (is_array($fallback) && count($fallback) == 2) {
             list($className, $method) = $fallback;
             App::debug($this->serviceName . "服务，服务降级处理，执行fallback, class=" . $className . " method=" . $method);
-            return $className->$method();
+
+            return $className->$method(...$params);
         }
 
         return null;
