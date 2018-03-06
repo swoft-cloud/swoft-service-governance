@@ -9,15 +9,16 @@ interface ProviderInterface
 {
     /**
      * @param string $serviceName
+     * @param array  ...$params
      *
      * @return mixed
      */
     public function getServiceList(string $serviceName, ...$params);
 
     /**
-     * @param string $serviceName
+     * @param array ...$params
      *
      * @return mixed
      */
-    public function registerService(string $serviceName , ...$params);
+    public function registerService(...$params);
 }

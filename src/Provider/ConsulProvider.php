@@ -5,6 +5,7 @@ namespace Swoft\Sg\Provider;
 use Swoft\App;
 use Swoft\Bean\Annotation\Bean;
 use Swoft\Bean\Annotation\Value;
+use Swoft\HttpClient\Client;
 
 /**
  * Consul provider
@@ -21,7 +22,7 @@ class ConsulProvider implements ProviderInterface
     /**
      * Discovery path
      */
-    const DISCOVERY_PATH = '/v1/health/Service/';
+    const DISCOVERY_PATH = '/v1/health/service/';
 
     /**
      * Specifies the address of the consul
@@ -128,14 +129,6 @@ class ConsulProvider implements ProviderInterface
     private $registerCheckTimeout = 1;
 
     /**
-     * Specifies the service to list services for
-     *
-     * @Value(name="${config.provider.consul.discovery.name}", env="${CONSUL_DISCOVERY_NAME}")
-     * @var string
-     */
-    private $discoveryName = APP_NAME;
-
-    /**
      * Specifies the datacenter to query. This will default to the datacenter of the agent being queried
      *
      * @Value(name="${config.provider.consul.discovery.dc}", env="${CONSUL_DISCOVERY_DC}")
@@ -177,9 +170,10 @@ class ConsulProvider implements ProviderInterface
      */
     public function getServiceList(string $serviceName, ...$params)
     {
-        $url      = $this->getDiscoveryUrl($serviceName);
-        $result   = HttpClient::call($url, HttpClient::GET);
-        $services = json_decode($result, true);
+        $httpClient = new Client();
+        $url        = $this->getDiscoveryUrl($serviceName);
+        $result     = $httpClient->get($url)->getResult();
+        $services   = json_decode($result, true);
 
         // 数据格式化
         $nodes = [];
@@ -206,12 +200,11 @@ class ConsulProvider implements ProviderInterface
     /**
      * register service
      *
-     * @param string $serviceName
-     * @param array  ...$params
+     * @param array ...$params
      *
      * @return bool
      */
-    public function registerService(string $serviceName, ...$params)
+    public function registerService(...$params)
     {
         $hostName = gethostname();
         if (empty($this->registerId)) {
@@ -227,7 +220,7 @@ class ConsulProvider implements ProviderInterface
             'Name'              => $this->registerName,
             'Tags'              => $this->registerTags,
             'Address'           => $this->registerAddress,
-            'Port'              => $this->registerPort,
+            'Port'              => intval($this->registerPort),
             'EnableTagOverride' => $this->registerEnableTagOverride,
             'Check'             => [
                 'id'       => $this->registerCheckId,
@@ -255,11 +248,13 @@ class ConsulProvider implements ProviderInterface
             'passing' => $this->discoveryPassing,
             'dc'      => $this->discoveryDc,
             'near'    => $this->discoveryNear,
-            'tag '    => $this->discoveryName,
         ];
 
+        if (!empty($this->discoveryTag)) {
+            $query['tag'] = $this->discoveryTag;
+        }
+
         $queryStr    = http_build_query($query);
-        $serviceName = empty($this->discoveryName) ? $serviceName : $this->discoveryName;
         $path        = sprintf('%s%s', self::DISCOVERY_PATH, $serviceName);
 
         return sprintf('%s:%d%s?%s', $this->address, $this->port, $path, $queryStr);
@@ -273,25 +268,13 @@ class ConsulProvider implements ProviderInterface
      */
     private function putService(array $service, string $url)
     {
-        $contentJson = json_encode($service);
-        $headers     = [
-            'Content-Type' => 'application/json',
+        $options = [
+            'json' => $service,
         ];
-
-        $ch = curl_init(); //初始化CURL句柄
-        curl_setopt($ch, CURLOPT_URL, $url); //设置请求的URL
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); //设为TRUE把curl_exec()结果转化为字串，而不是直接输出
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT"); //设置请求方式
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);//设置HTTP头信息
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $contentJson);//设置提交的字符串
-        curl_exec($ch);//执行预定义的CURL
-        if (!curl_errno($ch)) {
-            $info = curl_getinfo($ch);
-            echo 'Took ' . $info['total_time'] . ' seconds to send a request to ' . $info['url'];
-        } else {
-            echo 'Curl error: ' . curl_error($ch);
+        $httpClient = new Client();
+        $result = $httpClient->put($url, $options)->getResult();
+        if(empty($result)){
+            output()->writeln(sprintf('<success>RPC service register success by consul ! tcp=%s:%d</success>', $this->registerAddress, $this->registerPort));
         }
-        curl_close($ch);
     }
 }

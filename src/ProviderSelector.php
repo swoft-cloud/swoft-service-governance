@@ -8,7 +8,7 @@ use Swoft\Sg\Provider\ConsulProvider;
 use Swoft\Sg\Provider\ProviderInterface;
 
 /**
- * the selector of service provider
+ * Provider selector
  */
 class ProviderSelector implements SelectorInterface
 {
@@ -16,6 +16,13 @@ class ProviderSelector implements SelectorInterface
      * consul
      */
     const TYPE_CONSUL = 'consul';
+
+    /**
+     * Default provider
+     *
+     * @var string
+     */
+    private $provider = self::TYPE_CONSUL;
 
     /**
      * @var array
@@ -32,10 +39,14 @@ class ProviderSelector implements SelectorInterface
      * @return ProviderInterface
      * @throws \Swoft\Exception\InvalidArgumentException
      */
-    public function select(string $type)
+    public function select(string $type = null)
     {
+        if (empty($type)) {
+            $type = $this->provider;
+        }
+
         $providers = $this->mergeProviders();
-        if (! isset($providers[$type])) {
+        if (!isset($providers[$type])) {
             throw new InvalidArgumentException(sprintf('Provider %s does not exist', $type));
         }
 

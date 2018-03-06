@@ -3,9 +3,9 @@
 namespace Swoft\Sg;
 
 use Swoft\App;
-use Swoft\Sg\Balancer\RandomBalancer;
-use Swoft\Sg\Balancer\RoundRobinBalancer;
+use Swoft\Exception\InvalidArgumentException;
 use Swoft\Sg\Balancer\BalancerInterface;
+use Swoft\Sg\Balancer\RandomBalancer;
 
 /**
  * the manager of balancer
@@ -18,9 +18,9 @@ class BalancerSelector implements SelectorInterface
     const TYPE_RANDOM = 'random';
 
     /**
-     * the name of roundRobin
+     * @var string
      */
-    const TYPE_ROUND_ROBIN = 'roundRobin';
+    private $balancer = self::TYPE_RANDOM;
 
     /**
      * @var array
@@ -36,13 +36,18 @@ class BalancerSelector implements SelectorInterface
      *
      * @return BalancerInterface
      */
-    public function select(string $type)
+    public function select(string $type = null)
     {
+        if (empty($type)) {
+            $type = $this->balancer;
+        }
         $balancers = $this->mergeBalancers();
         if (!isset($balancers[$type])) {
+            throw new InvalidArgumentException(sprintf('Balancer %s does not exist', $type));
         }
 
         $balancerBeanName = $balancers[$type];
+
         return App::getBean($balancerBeanName);
     }
 
@@ -65,7 +70,6 @@ class BalancerSelector implements SelectorInterface
     {
         return [
             self::TYPE_RANDOM => RandomBalancer::class,
-            self::TYPE_ROUND_ROBIN => RoundRobinBalancer::class
         ];
     }
 }
