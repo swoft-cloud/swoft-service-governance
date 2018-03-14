@@ -6,7 +6,6 @@ use Swoft\Bean\Annotation\Bean;
 
 /**
  * 轮询负载
- *
  * @Bean()
  */
 class RoundRobinBalancer implements BalancerInterface
@@ -15,12 +14,13 @@ class RoundRobinBalancer implements BalancerInterface
 
     public function select(array $serviceList, ...$params)
     {
-        $currentIndex = $this->lastIndex + 1;
-        if ($currentIndex+1 > count($serviceList)) {
-            $currentIndex = 0;
+        $currentIndex = $this->lastIndex;
+        $value = $serviceList[$currentIndex];
+        if ($currentIndex + 1 > count($serviceList) - 1) {
+            $this->lastIndex = 0;
+        } else {
+            $this->lastIndex++;
         }
-
-        $this->lastIndex = $currentIndex;
-        return $serviceList[$currentIndex];
+        return $value;
     }
 }
